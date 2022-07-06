@@ -8,6 +8,7 @@ import androidx.preference.PreferenceManager;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -19,8 +20,10 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Scanner;
 
 
@@ -73,11 +76,17 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
             startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); //set anchornya
 
             /**TODO: Tampilkan alamatnya menggantikan Start pointo*/
-            startMarker.setTitle("Start point");
-            mapView.getController().setCenter(startPoin); //Set center dari map sebagai posisi start point yang ada markernya sekarang
-            mapView.getController().setZoom(19);
-            mapView.getOverlays().add(startMarker); //Tampilkan markernya sebagai map overlay (keiket longitude latitude supaya ikut gerak juga kalau peta gerak)
-            mapView.invalidate();
+            Geocoder placeNow = new Geocoder(getApplicationContext(), Locale.getDefault()) ;
+            try {
+                placeNow.getFromLocation(latitude, longitude, 1);
+                startMarker.setTitle(placeNow.getFromLocation(latitude, longitude, 1).get(0).getAddressLine(0));
+                mapView.getController().setCenter(startPoin); //Set center dari map sebagai posisi start point yang ada markernya sekarang
+                mapView.getController().setZoom(19);
+                mapView.getOverlays().add(startMarker); //Tampilkan markernya sebagai map overlay (keiket longitude latitude supaya ikut gerak juga kalau peta gerak)
+                mapView.invalidate();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }else{
             Toast.makeText(cont, "No latitude and longitude", Toast.LENGTH_SHORT).show();
         }
@@ -86,19 +95,23 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
     private void getLongitudeLatitude(Scanner scan) {
         String longOrLat, longitudeOne, latitudeOne;
         while(scan.hasNextLine()){
-            longOrLat = scan.next();
-            switch(longOrLat.toLowerCase()){
-                case "longitude":
-                    longitudeOne = scan.next() ;
-                    longitude = Double.parseDouble(longitudeOne) ;
-                    break;
-                case "latitude":
-                    latitudeOne = scan.next();
-                    latitude = Double.parseDouble(latitudeOne) ;
-                    break;
-                default:
-                    Toast.makeText(this, "Wrong input", Toast.LENGTH_SHORT).show();
-                    return;
+            if(latitude == 0.0 || longitude == 0.0){
+                longOrLat = scan.next();
+                switch(longOrLat.toLowerCase()){
+                    case "longitude":
+                        longitudeOne = scan.next() ;
+                        longitude = Double.parseDouble(longitudeOne) ;
+                        break;
+                    case "latitude":
+                        latitudeOne = scan.next();
+                        latitude = Double.parseDouble(latitudeOne) ;
+                        break;
+                    default:
+                        Toast.makeText(this, "Wrong input", Toast.LENGTH_SHORT).show();
+                        return;
+                }
+            }else{
+                break;
             }
         }
     }
