@@ -7,9 +7,14 @@ import androidx.preference.PreferenceManager;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.os.Environment;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import org.osmdroid.config.Configuration ;
@@ -20,20 +25,25 @@ import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.MapEventsOverlay;
 import org.osmdroid.views.overlay.Marker;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Scanner;
 
-
 public class MainActivity extends AppCompatActivity implements MapEventsReceiver {
-    private final int REQUEST_PERMISSIONS_REQUEST_CODE = 1;
+    private final int REQUEST_PERMISSIONS_REQUEST_CODE = 23;
     private MapView mapView = null ;
     private Double latitude = 0.0 ;
     private Double longitude = 0.0 ;
     private Scanner scan = null;
-    private InputStream input = null ;
+    private EditText inputLatitude, inputLongitude;
+    private Button save;
+    private File dir ;
+    private FileOutputStream fileOutputStream = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,11 +51,21 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
         Context cont = getApplicationContext();
         Configuration.getInstance().load(cont, PreferenceManager.getDefaultSharedPreferences(cont));
         setContentView(R.layout.activity_main);
+        save = (Button) findViewById(R.id.submitBtn);
+        inputLatitude = (EditText) findViewById(R.id.editTxtLatitude);
+        inputLongitude = (EditText) findViewById(R.id.editTxtLongitude) ;
 
         /**Ambil longitude dan lattitude dari file text di folder res*/
+        dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
         try{
-            input = cont.getResources().openRawResource(R.raw.location) ;
-            scan = new Scanner(input) ;
+            File locTxt = new File(dir, "Location.txt");
+            if(!locTxt.exists()){
+                fileOutputStream = new FileOutputStream(locTxt);
+                fileOutputStream.write("Longitude:115.168640\nLatitude:-8.719266".getBytes());
+                fileOutputStream.flush();
+                fileOutputStream.close();
+            }
+            scan = new Scanner(new File(String.valueOf(dir) + "/Location.txt")) ;
             scan.useDelimiter(":|\\n");
             getLongitudeLatitude(scan) ;
         }catch(Exception e){
@@ -59,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
         mapView.getOverlays().add(0, mapEventsOverlay);
         mapView.setTileSource(TileSourceFactory.MAPNIK);
         //Permissionsnya
-        String[] permissionStrings = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION};
+        String[] permissionStrings = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.READ_EXTERNAL_STORAGE};
         requestPermissionsIfNecessary(permissionStrings); //permissions
 
         /**Seandainya latitude dan longitude tidak ada, maka tampilan defaultnya mengarah pada
@@ -78,18 +98,52 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
             /**TODO: Tampilkan alamatnya menggantikan Start pointo*/
             Geocoder placeNow = new Geocoder(getApplicationContext(), Locale.getDefault()) ;
             try {
-                placeNow.getFromLocation(latitude, longitude, 1);
-                startMarker.setTitle(placeNow.getFromLocation(latitude, longitude, 1).get(0).getAddressLine(0));
-                mapView.getController().setCenter(startPoin); //Set center dari map sebagai posisi start point yang ada markernya sekarang
-                mapView.getController().setZoom(19);
-                mapView.getOverlays().add(startMarker); //Tampilkan markernya sebagai map overlay (keiket longitude latitude supaya ikut gerak juga kalau peta gerak)
-                mapView.invalidate();
+                if(!placeNow.getFromLocation(latitude, longitude, 1).isEmpty()){
+                    startMarker.setTitle(placeNow.getFromLocation(latitude, longitude, 1).get(0).getAddressLine(0));
+                    mapView.getController().setCenter(startPoin); //Set center dari map sebagai posisi start point yang ada markernya sekarang
+                    mapView.getController().setZoom(19);
+                    mapView.getOverlays().add(startMarker); //Tampilkan markernya sebagai map overlay (keiket longitude latitude supaya ikut gerak juga kalau peta gerak)
+                    mapView.invalidate();
+                }else{
+                    Toast.makeText(cont, "Location doesn't exist!\nRemove Location.txt from Documents folder", Toast.LENGTH_SHORT).show();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }else{
             Toast.makeText(cont, "No latitude and longitude", Toast.LENGTH_SHORT).show();
         }
+
+        save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String willBePrinted = "" ;
+                String inputedLatitude = String.valueOf(inputLatitude.getText());
+                String inputedLongitude = String.valueOf(inputLongitude.getText());
+                    if (!inputedLatitude.equals("") && !inputedLongitude.equals("")) {
+                        latitude = Double.parseDouble(inputedLatitude);
+                        longitude = Double.parseDouble(inputedLongitude);
+                        try {
+                            File file = new File(dir,"Location.txt");
+                            willBePrinted = "Longitude:" + inputedLongitude + "\nLatitude:" + inputedLatitude;
+                            fileOutputStream = new FileOutputStream(file);
+                            fileOutputStream.write(willBePrinted.getBytes());
+                            fileOutputStream.flush();
+                            fileOutputStream.close();
+                            Toast.makeText(getApplicationContext(), "Saved to" + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+                            Intent intent = getIntent();
+                            finish();
+                            startActivity(intent);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+            }
+        }) ;
     }
 
     private void getLongitudeLatitude(Scanner scan) {

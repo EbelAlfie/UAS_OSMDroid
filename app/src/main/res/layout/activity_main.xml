@@ -3,12 +3,43 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
     <org.osmdroid.views.MapView
         android:id="@+id/peta"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="558dp">
+
+    </org.osmdroid.views.MapView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/peta"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/editTxtLongitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Longitude"
+            android:inputType="numberSigned|numberDecimal" />
+
+        <EditText
+            android:id="@+id/editTxtLatitude"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Latitude"
+            android:inputType="numberSigned|numberDecimal" />
+
+        <Button
+            android:id="@+id/submitBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save to file" />
+
+    </LinearLayout>
 
 </RelativeLayout>
