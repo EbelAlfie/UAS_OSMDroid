@@ -7,10 +7,13 @@ import androidx.preference.PreferenceManager;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -51,10 +54,24 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
         Configuration.getInstance().load(cont, PreferenceManager.getDefaultSharedPreferences(cont));
         setContentView(R.layout.activity_main);
 
-        View v = new View(cont) ;
         save = (Button) findViewById(R.id.submitBtn);
         inputLatitude = (EditText) findViewById(R.id.editTxtLatitude);
         inputLongitude = (EditText) findViewById(R.id.editTxtLongitude) ;
+
+        mapView = (MapView) findViewById(R.id.peta) ;
+        MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(cont, this) ;
+        mapView.getOverlays().add(0, mapEventsOverlay);
+        mapView.setTileSource(TileSourceFactory.MAPNIK);
+        //Permissionsnya
+        String[] permissionStrings = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION};
+        requestPermissionsIfNecessary(permissionStrings); //permissions
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()){
+                Intent getpermission = new Intent();
+                getpermission.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                startActivity(getpermission);
+            }
+        }
 
         /**Ambil longitude dan lattitude dari file text di folder res*/
         dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
@@ -70,18 +87,10 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
             scan.useDelimiter(":|\\n");
             getLongitudeLatitude(scan) ;
         }catch(Exception e){
-            Toast.makeText(cont, "Error " + e.toString(), Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
         }finally{
             scan.close() ;
         }
-
-        mapView = (MapView) findViewById(R.id.peta) ;
-        MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(cont, this) ;
-        mapView.getOverlays().add(0, mapEventsOverlay);
-        mapView.setTileSource(TileSourceFactory.MAPNIK);
-        //Permissionsnya
-        String[] permissionStrings = {Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION};
-        requestPermissionsIfNecessary(permissionStrings); //permissions
 
         /**Seandainya latitude dan longitude tidak ada, maka tampilan defaultnya mengarah pada
           Longitude dan latitude Indonesia sebagai center*/
