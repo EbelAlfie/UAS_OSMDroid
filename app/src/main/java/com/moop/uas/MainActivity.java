@@ -51,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
         Context cont = getApplicationContext();
         Configuration.getInstance().load(cont, PreferenceManager.getDefaultSharedPreferences(cont));
         setContentView(R.layout.activity_main);
+
+        View v = new View(cont) ;
         save = (Button) findViewById(R.id.submitBtn);
         inputLatitude = (EditText) findViewById(R.id.editTxtLatitude);
         inputLongitude = (EditText) findViewById(R.id.editTxtLongitude) ;
@@ -59,9 +61,9 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
         dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
         try{
             File locTxt = new File(dir, "Location.txt");
-            if(!locTxt.exists()){
+            if(!locTxt.exists()){ //Kalau filenya belum ada, sistem bakal create file
                 fileOutputStream = new FileOutputStream(locTxt);
-                fileOutputStream.write("Longitude:115.168640\nLatitude:-8.719266".getBytes());
+                fileOutputStream.write("Longitude:115.168640\nLatitude:-8.719266".getBytes());//Default position pantai Kuta
                 fileOutputStream.flush();
                 fileOutputStream.close();
             }
@@ -84,11 +86,27 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
 
         /**Seandainya latitude dan longitude tidak ada, maka tampilan defaultnya mengarah pada
           Longitude dan latitude Indonesia sebagai center*/
+        GeoPoint defaultPosition = new GeoPoint(5.00,120.00,0);
         mapView.getController().setZoom(5.5);
-        GeoPoint g = new GeoPoint(5.00,120.00,0);
-        mapView.getController().setCenter(g);
+        mapView.getController().setCenter(defaultPosition);
 
         /**Set tampilan map mengikuti longitude dan latitude yang telah dibaca dari file text*/
+        Boolean status = displayMarker(cont);
+        if(status){
+            Toast.makeText(cont, "Succeeded", Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(cont, "Failed displaying marker", Toast.LENGTH_SHORT).show();
+        }
+
+        save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                writeData() ;
+            }
+        }) ;
+    }
+
+    private Boolean displayMarker(Context cont){
         if(-90 < latitude && latitude < 90 && -180 < longitude && longitude < 180){
             GeoPoint startPoin = new GeoPoint(latitude,longitude,0); //Ambil dari storage utk dijadikan starting point
             Marker startMarker = new Marker(mapView);
@@ -104,66 +122,65 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
                     mapView.getController().setZoom(19);
                     mapView.getOverlays().add(startMarker); //Tampilkan markernya sebagai map overlay (keiket longitude latitude supaya ikut gerak juga kalau peta gerak)
                     mapView.invalidate();
+                    return true;
                 }else{
                     Toast.makeText(cont, "Location doesn't exist!\nRemove Location.txt from Documents folder", Toast.LENGTH_SHORT).show();
+                    return false;
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                return false ;
             }
         }else{
             Toast.makeText(cont, "No latitude and longitude", Toast.LENGTH_SHORT).show();
+            return false ;
         }
+    }
 
-        save.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String willBePrinted = "" ;
-                String inputedLatitude = String.valueOf(inputLatitude.getText());
-                String inputedLongitude = String.valueOf(inputLongitude.getText());
-                if (inputedLongitude.equals("")) {
-                    inputLongitude.setError("Must not be null!");
-                    inputLongitude.requestFocus();
-                    return;
-                }
-                if(inputedLatitude.equals("")){
-                   inputLatitude.setError("Must not be null!");
-                   inputLatitude.requestFocus();
-                   return;
-                }
-                if(Double.parseDouble(inputedLongitude) < -180 || Double.parseDouble(inputedLongitude)  > 180)
-                {
-                    inputLongitude.setError("Longitude not valid!");
-                    inputLongitude.requestFocus() ;
-                    return;
-                }
-                    if(Double.parseDouble(inputedLatitude) < -90 || Double.parseDouble(inputedLatitude) > 90)
-                {
-                    inputLatitude.setError("Latitude is not valid!");
-                    inputLatitude.requestFocus();
-                    return;
-                }
-                latitude = Double.parseDouble(inputedLatitude);
-                longitude = Double.parseDouble(inputedLongitude);
-                try {
-                    File file = new File(dir,"Location.txt");
-                    willBePrinted = "Latitude:" + inputedLatitude + "\nLongitude:" + inputedLongitude ;
-                    fileOutputStream = new FileOutputStream(file);
-                    fileOutputStream.write(willBePrinted.getBytes());
-                    fileOutputStream.flush();
-                    fileOutputStream.close();
-                    Toast.makeText(getApplicationContext(), "Saved to" + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-                    Intent intent = getIntent();
-                    finish();
-                    startActivity(intent);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }) ;
+    private void writeData() {
+        String willBePrinted = "" ;
+        String inputedLatitude = String.valueOf(inputLatitude.getText());
+        String inputedLongitude = String.valueOf(inputLongitude.getText());
+        if (inputedLongitude.equals("")) {
+            inputLongitude.setError("Must not be null!");
+            inputLongitude.requestFocus();
+            return;
+        }
+        if(inputedLatitude.equals("")){
+            inputLatitude.setError("Must not be null!");
+            inputLatitude.requestFocus();
+            return;
+        }
+        if(Double.parseDouble(inputedLongitude) < -180 || Double.parseDouble(inputedLongitude)  > 180)
+        {
+            inputLongitude.setError("Longitude not valid!");
+            inputLongitude.requestFocus() ;
+            return;
+        }
+        if(Double.parseDouble(inputedLatitude) < -90 || Double.parseDouble(inputedLatitude) > 90)
+        {
+            inputLatitude.setError("Latitude is not valid!");
+            inputLatitude.requestFocus();
+            return;
+        }
+        try {
+            File file = new File(dir,"Location.txt");
+            willBePrinted = "Latitude:" + inputedLatitude + "\nLongitude:" + inputedLongitude ;
+            fileOutputStream = new FileOutputStream(file);
+            fileOutputStream.write(willBePrinted.getBytes());
+            fileOutputStream.flush();
+            fileOutputStream.close();
+            Toast.makeText(getApplicationContext(), "Saved to" + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+            latitude = Double.parseDouble(inputedLatitude);
+            longitude = Double.parseDouble(inputedLongitude);
+            displayMarker(getApplicationContext()) ;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void getLongitudeLatitude(Scanner scan) {

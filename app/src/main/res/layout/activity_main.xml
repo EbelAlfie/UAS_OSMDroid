@@ -25,19 +25,28 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Longitude"
-            android:inputType="numberSigned|numberDecimal" />
+            android:inputType="numberSigned|numberDecimal"
+            android:textAlignment="center"
+            android:textColor="#7C7474"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <EditText
             android:id="@+id/editTxtLatitude"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Latitude"
-            android:inputType="numberSigned|numberDecimal" />
+            android:inputType="numberSigned|numberDecimal"
+            android:textAlignment="center"
+            android:textColor="#716969"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/submitBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="Save to file" />
 
     </LinearLayout>
