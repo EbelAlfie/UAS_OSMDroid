@@ -7,7 +7,6 @@ import androidx.preference.PreferenceManager;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.os.Bundle;
