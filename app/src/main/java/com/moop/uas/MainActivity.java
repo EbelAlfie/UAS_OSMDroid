@@ -91,7 +91,6 @@ public class MainActivity extends AppCompatActivity implements MapEventsReceiver
         }finally{
             scan.close() ;
         }
-
         /**Seandainya latitude dan longitude tidak ada, maka tampilan defaultnya mengarah pada
           Longitude dan latitude Indonesia sebagai center*/
         GeoPoint defaultPosition = new GeoPoint(5.00,120.00,0);
